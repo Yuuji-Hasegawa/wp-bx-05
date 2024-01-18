@@ -36,7 +36,50 @@ function create_post_type()
           'supports' => array('title','editor')
         )
     );
+    register_post_type(
+        'gallery',
+        array(
+      'labels' => array(
+          'name' => 'ギャラリー',
+          'singular_name' => 'ギャラリー',
+          'add_new_item' => 'ギャラリーの新規追加',
+          'edit_item' => 'ギャラリーの編集'
+      ),
+      'has_archive' => true,
+      'public' => true,
+      'show_ui' => true,
+      'menu_position' => 14,
+      'supports' => array('title','thumbnail'),
+      'menu_icon'   => 'dashicons-format-gallery',
+      )
+    );
+    register_post_type(
+        'review', /* post-type */
+        array(
+        'labels' => array(
+            'name' => '口コミ',
+            'singular_name' => '口コミ',
+            'add_new_item' => '口コミの新規追加',
+            'edit_item' => '口コミの編集'
+        ),
+        'has_archive' => true,
+        'public' => true,
+        'show_ui' => true,
+        'menu_position' => 16,
+        'supports' => array('editor','title','thumbnail'),
+        'menu_icon'   => 'dashicons-star-half',
+        )
+    );
 }
+function my_redirect_404()
+{
+    if (is_singular('gallery') || is_singular('review')) {
+        global $wp_query;
+        $wp_query->set_404();
+        status_header(404);
+    }
+}
+add_action('template_redirect', 'my_redirect_404');
 function custom_post_type_link($link, $post)
 {
     if ($post->post_type === 'news') {
@@ -69,6 +112,7 @@ function add_my_box()
     $addtype = array( 'post', 'page', 'news');
     add_meta_box('meta_info', 'SEO', 'meta_info_form', $addtype, 'side');
     add_meta_box('meta_blogs', '追加情報', 'meta_blogs_form', 'post', 'normal');
+    add_meta_box('meta_review', '口コミ情報', 'meta_review_form', 'review', 'normal');
 }
 add_action('admin_menu', 'add_my_box');
 
@@ -138,6 +182,17 @@ function meta_blogs_form()
 <?php
 }
 
+function meta_review_form()
+{
+    global $post;
+    $review_rate = get_post_meta($post->ID, 'review_rate', true); ?>
+<h3 style="font-size: 14px; margin: 0 0 8px;">レビュー（1〜5で入力してください）</h3>
+<input type="text" name="review_rate"
+  value="<?php echo esc_html($review_rate); ?>"
+  style="width: 100%;margin: 0 0 8px;" />
+<?php
+}
+
 function save_meta_info($post_id)
 {
     if (isset($_POST['meta_keywords'])) {
@@ -169,6 +224,11 @@ function save_meta_info($post_id)
         update_post_meta($post_id, 'recommend_heading', $_POST['recommend_heading']);
     } else {
         delete_post_meta($post_id, 'recommend_heading');
+    }
+    if (isset($_POST['review_rate'])) {
+        update_post_meta($post_id, 'review_rate', $_POST['review_rate']);
+    } else {
+        delete_post_meta($post_id, 'review_rate');
     }
 }
 add_action('save_post', 'save_meta_info');

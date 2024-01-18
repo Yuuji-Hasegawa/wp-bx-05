@@ -51,16 +51,52 @@ function get_thumb()
     $output .= '</picture>';
     return $output;
 }
+function get_thumb_sq()
+{
+    $output = '<picture class="o-frame o-frame--square">';
+    if (has_post_thumbnail()) {
+        $output .= '<img src="' . get_the_post_thumbnail_url($post->ID, 'full') . '"  width="100%" height="100%" loading="lazy" decoding="async" fetchpriority="low" alt=""/>';
+    } else {
+        $output .= '
+      <source srcset="' . get_template_directory_uri() . '/img/thumb.avif" type="image/avif" />
+      <source srcset="' . get_template_directory_uri() . '/img/thumb.webp" type="image/webp" />
+      <img src="' . get_template_directory_uri() . '/img/thumb.png" width="100%" height="100%" loading="lazy" decoding="async" fetchpriority="low" alt="" />';
+    }
+    $output .= '</picture>';
+    return $output;
+}
+function get_reviewer_pict()
+{
+    global $post;
+    $output = '<picture class="o-frame o-frame--round">';
+    if(has_post_thumbnail()) {
+        $output .= '<img src="' . get_the_post_thumbnail_url($post->ID, 'full') . '"  width="100%" height="100%" loading="lazy" decoding="async" fetchpriority="low" alt=""/>';
+    } else {
+        $output .= '
+          <source type="image/avif" srcset="' . get_template_directory_uri() . '/img/profile_default.avif" />
+          <source type="image/webp" srcset="' . get_template_directory_uri() . '/img/profile_default.webp" />
+          <img src="' . get_template_directory_uri() . '/img/profile_default.png" width="100%" height="100%" loading="lazy" decoding="async" fetchpriority="low" alt="" />
+    ';
+    }
+    $output .= '</picture>';
+    return $output;
+}
 function get_author_id()
 {
     global $post;
-    if(!is_404()) {
-        $author_id = $post->post_author;
-        if($author_id === '0') {
-            $author_id = '1';
-        }
+    $author_id = '';
+    if(is_404() || is_search()) {
+        $author_id = 0;
     } else {
-        $author_id = '0';
+        if($post->post_author) {
+            if($author_id === '0') {
+                $author_id = '1';
+            } else {
+                $author_id = $post->post_author;
+            }
+        } else {
+            $author_id = 0;
+        }
     }
     return $author_id;
 }
@@ -428,3 +464,110 @@ function get_service_list()
         return $output;
     }
 }
+function get_pay_list()
+{
+    $services = get_vars('company', 'pay');
+    $output = '';
+    if ($services) {
+        $output = '<ul class="c-disc-list">';
+        for ($i = 0; $i < count($services); $i++) {
+            $output .= '<li>' . $services[$i] . '</li>';
+        }
+        $output .= '</ul>';
+    }
+    if ($output) {
+        return $output;
+    }
+}
+function get_review_count()
+{
+    $args = array(
+      'post_type' => 'review',
+      'posts_per_page' => -1,
+);
+    $the_query = new WP_Query($args);
+    $count = $the_query->found_posts;
+    return $count;
+}
+function get_review_score()
+{
+    $args = array(
+      'post_type' => 'review',
+      'posts_per_page' => -1,
+);
+    $the_query = new WP_Query($args);
+    $count = $the_query->found_posts;
+    $tmp = 0;
+    $avg = 0;
+    if ($the_query->have_posts()) {
+        while ($the_query->have_posts()) {
+            $the_query->the_post();
+            $rating = intval(get_post_meta(get_the_ID(), 'review_rate', true));
+            if (is_int($rating)) {
+                $tmp += $rating;
+            }
+        }
+        wp_reset_postdata();
+    }
+    if ($count != '0') {
+        $avg = $tmp / $count;
+    }
+    return $avg;
+}
+function found_result_count()
+{
+    global $wp_query;
+    $paged = get_query_var('paged') - 1;
+    $posts_per_page = get_query_var('posts_per_page');
+    $count = $total = $wp_query->post_count;
+    $from = 0;
+    $output = '';
+    if (0 < $posts_per_page) {
+        $total = $wp_query->found_posts;
+        if (0 < $paged) {
+            $from = $paged * $posts_per_page;
+        }
+    }
+    $output = '<span class="u-font-en-con">' . $total . '</span>件中&nbsp;/&nbsp;';
+    1 < $count ? ($output .= '<span class="u-font-en-con">' . $from + 1 . '</span>件 ~ ') : '';
+    $output .= '<span class="u-font-en-con">' . $from + $count . '</span>件目を表示';
+    return $output;
+}
+function custom_search_highlight($text)
+{
+    if (is_search()) {
+        $keys = implode('|', explode(' ', get_search_query()));
+        $text = preg_replace('/(' . $keys . ')(?![^<]*>)/iu', '<span class="u-bg-yellow">\0</span>', $text);
+    }
+    return $text;
+}
+add_filter('the_title', 'custom_search_highlight');
+add_filter('the_excerpt', 'custom_search_highlight');
+add_filter('the_content', 'custom_search_highlight');
+
+function custom_search_excerpt($content)
+{
+    if (is_search()) {
+        $keys = implode('|', explode(' ', get_search_query()));
+        $pattern = '/(' . $keys . ')(?![^<]*>)/iu';
+
+        // 抜粋の前後に表示するテキストの長さを設定
+        $before_length = 30; // ヒットする単語の前の文字数
+        $after_length = 30; // ヒットする単語の後の文字数
+
+        // HTMLタグを除去したテキストを取得
+        $stripped_content = wp_strip_all_tags($content);
+
+        // ヒットする単語を検索し、前後のテキストを抜粋
+        preg_match($pattern, $stripped_content, $matches, PREG_OFFSET_CAPTURE);
+        if (isset($matches[0])) {
+            $start = max(0, $matches[0][1] - $before_length);
+            $end = min(strlen($stripped_content), $matches[0][1] + strlen($matches[0][0]) + $after_length);
+            $excerpt = '— ' . substr($stripped_content, $start, $end - $start) . ' ...';
+            $excerpt = preg_replace($pattern, '<span class="u-bg-yellow u-text-weight-b">\0</span>', $excerpt);
+            return $excerpt;
+        }
+    }
+    return $content;
+}
+add_filter('the_excerpt', 'custom_search_excerpt');

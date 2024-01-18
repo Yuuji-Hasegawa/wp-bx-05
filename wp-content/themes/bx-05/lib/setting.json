@@ -57,6 +57,11 @@
 			"事業項目4",
 			"事業項目5",
 			"事業項目6"
+		],
+    "pay": [
+			"現金",
+			"クレジットカード（VISA、MASTER、JCB、AMEX、Diners）",
+			"電子マネー（交通系電子マネー、iD、QUICPay、PayPay）"
 		]
 	},
 	"term": {

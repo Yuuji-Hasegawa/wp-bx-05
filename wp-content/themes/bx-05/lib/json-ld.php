@@ -21,6 +21,16 @@ function set_bread_json()
             )
         );
         $array = array_merge($array, $notfound);
+    } elseif (is_search()) {
+        $search[] = array(
+            "@type" => "ListItem",
+            "position" => 2,
+            "item" => array(
+                "@id" => esc_url(home_url('/?s=') . get_search_query()),
+                "name" => esc_html('「' . get_search_query() . '」の検索結果')
+            )
+        );
+        $array = array_merge($array, $search);
     } elseif (is_page()) {
         $i = 1;
         if ($post->post_parent != 0) {
@@ -60,6 +70,26 @@ function set_bread_json()
                     "name" => esc_attr('お知らせ')
                 )
             );
+            $array = array_merge($array, $child);
+        } elseif (is_post_type_archive('gallery')) {
+            $child[] = array(
+              "@type" => "ListItem",
+              "position" => 2,
+              "item" => array(
+                  "@id" => esc_url(home_url('/gallery/')),
+                  "name" => esc_attr('ギャラリー')
+              )
+        );
+            $array = array_merge($array, $child);
+        } elseif (is_post_type_archive('review')) {
+            $child[] = array(
+              "@type" => "ListItem",
+              "position" => 2,
+              "item" => array(
+                  "@id" => esc_url(home_url('/review/')),
+                  "name" => esc_attr('お客様の声')
+              )
+        );
             $array = array_merge($array, $child);
         } elseif (is_tag()) {
             $parent[] = array(

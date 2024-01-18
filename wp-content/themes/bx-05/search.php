@@ -1,5 +1,4 @@
-<?php get_header();
-$protocol = empty($_SERVER["HTTPS"]) ? "http://" : "https://";?>
+<?php get_header();?>
 <div class="c-puton c-puton--filter">
   <picture class="o-frame o-frame--switch-l">
     <source type="image/avif"
@@ -12,19 +11,35 @@ $protocol = empty($_SERVER["HTTPS"]) ? "http://" : "https://";?>
   </picture>
   <div class="c-puton__inner o-cover">
     <h1 class="c-hero-copy o-cover__middle">
-      <span class="c-display-l u-text-weight-b u-font-en-con">Not found</span>
+      <span class="c-display-l u-text-weight-b u-font-en-con">Result</span>
+      <span
+        class="c-display-xs">「<?php echo get_search_query();?>」の検索結果</span>
     </h1>
   </div>
 </div>
-<div class="o-box o-box--transparent o-center u-bg-qua u-pb-2xl">
-  <h1 class="c-heading u-text-weight-b">お探しのページは見つかりませんでした。</h1>
-  <p class="c-content-l">
-    大変申し訳ございませんが、お探しのページ(URL:<span
-      class="u-font-en-con"><?php echo esc_url($protocol. $_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"]); ?></span>)は見つかりませんでした。<br />アドレスバーに直接URLを入力された場合は、アドレスが正しく入力されているか、もう一度ご確認下さい。
-  </p>
-  <p class="c-content-l">
-    正しいアドレスを入力しても表示されない場合は、一時的にアクセスできない状況にあるか、移動もしくは削除された可能性があります。<br />その場合お手数ですがトップページからお求めのページを再度お探しください。
-  </p>
+<div class="o-box o-box--transparent o-center u-bg-qua u-pt-2xl u-pb-2xl">
+  <div class="c-display-2xs u-text-weight-m u-mb-l">
+    <?php echo found_result_count();?>
+  </div>
+  <?php if (have_posts()):?>
+  <ul class="o-stack  o-stack--l">
+    <?php while (have_posts()): the_post();?>
+    <li class="c-news-item u-pb-l">
+      <a href="<?php the_permalink();?>" class="o-stack o-stack--xs">
+        <time class="c-label-l u-font-en-con"
+          datetime="<?php the_time('Y-m-d');?>"><?php the_time('Y.m.d');?></time>
+        <span
+          class="c-content-l c-text-link c-text-link--underline u-text-weight-b"><?php the_title();?></span>
+      </a>
+      <p class="c-content-l u-text-secondary">
+        <?php the_excerpt();?>
+      </p>
+    </li>
+    <?php endwhile;?>
+  </ul>
+  <?php else:?>
+  <p class="c-content-l u-mb-m">
+    「<?php echo get_search_query();?>」でヒットするコンテンツは見つかりませんでした。</p>
   <a href="<?php echo home_url('/');?>"
     class="o-box o-box--button o-box--rect-button u-mt-l">
     <span class="o-icon-parent">
@@ -37,5 +52,7 @@ $protocol = empty($_SERVER["HTTPS"]) ? "http://" : "https://";?>
       トップページへ戻る
     </span>
   </a>
+  <?php endif;
+echo get_pagination();?>
 </div>
 <?php get_footer();?>
